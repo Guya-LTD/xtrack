@@ -1,7 +1,7 @@
 ########################################################
 # Development build                                    #
 ########################################################
-FROM guyaltd/chat:build  AS development
+FROM node:13.12.0-alpine  AS development
 
 ENV WORK_DIR /usr/src/app
 WORKDIR ${WORK_DIR}
