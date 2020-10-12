@@ -9,8 +9,6 @@ WORKDIR ${WORK_DIR}
 ENV PATH ${WORK_DIR}/node_modules/.bin:$PATH
 
 COPY package.json .
-#COPY package-lock.json .
+COPY package-lock.json .
 
 RUN npm install
-
-CMD npm run start:watch
