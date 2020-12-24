@@ -39,6 +39,11 @@ io.use((socket, next) => { // 1. admin, 2. driver, 3. user
 // Handle connection
 io.on('connection', function (socket) {
 
+    // Return counts
+    socket.on('count:total', function() {
+        socket.emit('counted:total', drivers);
+    })
+
 
     /**
      * Traceback tracking number to the driver
@@ -116,6 +121,7 @@ io.on('connection', function (socket) {
         // trails - contains all tracking location
         drivers[socket.driver_id]['tracks'] = { "start": socket.handshake.query.location, "current": {}, "trails": [] };
         socket.emit('tests', drivers);
+        socket.broadcast.emit('counted:total', drivers);
     })
 
     /**
@@ -138,11 +144,13 @@ io.on('connection', function (socket) {
             drivers[socket.driver_id]['tracks']['current'] = data;
         }else{
             drivers[socket.driver_id]['tracks']['current'] = data;
-            drivers[socket.driver_id]['tracks']['trails'].push(data);
+            //drivers[socket.driver_id]['tracks']['trails'].push(data);
         }
         // Emit location to all clients
         socket.broadcast.emit('tracking', data);
         socket.emit('location:update:return', {
+            'name': socket.driver_id,
+            'data': data,
             'sucess': true,
             'message': 'Location Updated'
         });
@@ -166,7 +174,7 @@ io.on('connection', function (socket) {
     socket.on('disconnect', function() {
         // Change drivers status to ofline
         //drivers[socket.driver_id]['status'] = 'Offline';
-        delete drivers[socket.driver_id];  
+        //delete drivers[socket.driver_id];  
     })
 });
 
