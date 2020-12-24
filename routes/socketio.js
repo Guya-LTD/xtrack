@@ -18,39 +18,10 @@ var drivers = {};
 // scoket.io middleware
 // OTI Authentication
 io.use((socket, next) => { // 1. admin, 2. driver, 3. user
-    if (socket.handshake.query && socket.handshake.query.token){
-        /**
-         * Decode token and get driver's info
-         */
-        //var token = data.token;
-        axios.get(LOGIN_URL)
-        .then(function (response) {
-            // handle success
-            if (response.status != 200) return callback(new Error(response.error));
-            // Convert data to json
-            // save auth datas
-            // Save all drivers decoded data to socket.driver
-            socket.driver = response.data
-            // Add drivers id to socket for easy acess
-            socket.driver_id = response.data.id;
-            // Uppend driver to drivers
-            drivers[response.data.id] = response.data;
-            // Set drivers status to online 
-            drivers[response.data.id]['status'] = 'Online';
-            // Add emtpy tracks object since there is not gps location
-            // start - contains when tracking starts
-            // current - stores current drivers location
-            // trails - contains all tracking location
-            drivers[response.data.id]['tracks'] = { "start": socket.handshake.query.location, "current": {}, "trails": [] };
-            return next();
-        })
-        .catch(function (error) {
-            // handle error
-            return next(new Error(error));
-        })
-        .then(function () {
-            // always executed
-        });
+    if (socket.handshake.query && socket.handshake.query.name && socket.handshake.query.type){
+        socket.driver_id = socket.handshake.query.name;
+        socket.type = socket.handshake.query.type;
+        return next();
     }else if(socket.handshake.query && socket.handshake.query.tracking_number){
         if(socket.handshake.query.tracking_number == null){
             next(new Error("Error: Tracking number cannot be empty"))
@@ -67,6 +38,8 @@ io.use((socket, next) => { // 1. admin, 2. driver, 3. user
 
 // Handle connection
 io.on('connection', function (socket) {
+
+
     /**
      * Traceback tracking number to the driver
      */
@@ -129,6 +102,22 @@ io.on('connection', function (socket) {
         // Identify if the driver is online or is trackable
     })
 
+
+    /**
+     * Step 1 for admin
+     */
+    socket.on('driver:connection:join', function() {
+        drivers[socket.driver_id] = {}
+        // Set drivers status to online 
+        drivers[socket.driver_id]['status'] = 'Online';
+        // Add emtpy tracks object since there is not gps location
+        // start - contains when tracking starts
+        // current - stores current drivers location
+        // trails - contains all tracking location
+        drivers[socket.driver_id]['tracks'] = { "start": socket.handshake.query.location, "current": {}, "trails": [] };
+        socket.emit('tests', drivers);
+    })
+
     /**
      * Update Location
      */
@@ -149,6 +138,7 @@ io.on('connection', function (socket) {
             drivers[socket.driver_id]['tracks']['current'] = data;
         }else{
             drivers[socket.driver_id]['tracks']['current'] = data;
+            drivers[socket.driver_id]['tracks']['trails'].push(data);
         }
         // Emit location to all clients
         socket.broadcast.emit('tracking', data);
@@ -156,6 +146,7 @@ io.on('connection', function (socket) {
             'sucess': true,
             'message': 'Location Updated'
         });
+        socket.emit('tests', drivers);
     })
 
 
@@ -174,7 +165,8 @@ io.on('connection', function (socket) {
      */
     socket.on('disconnect', function() {
         // Change drivers status to ofline
-        drivers[socket.driver_id]['status'] = 'Offline';
+        //drivers[socket.driver_id]['status'] = 'Offline';
+        delete drivers[socket.driver_id];  
     })
 });
 
