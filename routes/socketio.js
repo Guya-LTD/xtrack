@@ -53,7 +53,7 @@ io.use((socket, next) => { // 1. admin, 2. driver, 3. user
         });
     }else if(socket.handshake.query && socket.handshake.query.tracking_number){
         if(socket.handshake.query.tracking_number == null){
-            next(new Error("Error: Tracking number cannot be empyt"))
+            next(new Error("Error: Tracking number cannot be empty"))
         }else{
             // Store the tracking number
             socket.tracking_number = socket.handshake.query.tracking_number;
